@@ -12,27 +12,42 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
  * A Camel Application
  */
-public class CovidAnalyzerTool {
+public class CovidAnalyzerTool implements Runnable{
 
     private ResultAnalyzer resultAnalyzer;
     private TestReader testReader;
     private int amountOfFilesTotal;
     private AtomicInteger amountOfFilesProcessed;
+    private ConcurrentLinkedDeque <ProcessThread> threads;
+    private static final int ThreadNumber = 5;
+    private boolean pause = false;
 
     public CovidAnalyzerTool() {
         resultAnalyzer = new ResultAnalyzer();
         testReader = new TestReader();
         amountOfFilesProcessed = new AtomicInteger();
+        threads = new ConcurrentLinkedDeque<>();
+        pause = false;
     }
 
     public void processResultData() {
         amountOfFilesProcessed.set(0);
         List<File> resultFiles = getResultFileList();
         amountOfFilesTotal = resultFiles.size();
+        int range amountOfFilesTotal/ThreadNumber;
+        for (int i = 0; i <= ThreadNumber-1; i++){
+            if (i == ThreadNumber-1){
+                threads.add(new ProcessThread(resultFiles, resultAnalyzer, amountOfFilesProcessed, testReader, i*range, amountOfFilesTotal-1));
+            } else{
+                threads.add(new ProcessThread(resultFiles, resultAnalyzer, amountOfFilesProcessed, testReader, i*range, (i*range)+range-1));
+            }
+            threads.getLast().start();
+        }
         for (File resultFile : resultFiles) {
             List<Result> results = testReader.readResultsFromFile(resultFile);
             for (Result result : results) {
@@ -54,7 +69,26 @@ public class CovidAnalyzerTool {
 
 
     public Set<Result> getPositivePeople() {
+
         return resultAnalyzer.listOfPositivePeople();
+    }
+
+    public void resumeThread(){
+        for (ProcessThread thread : threads){
+            thread.resume();
+        }
+    }
+
+    public void pauseThread(){
+        pause = true;
+        for (ProcessThread thread : threads){
+            thread.pauseThread();
+        }
+        try{
+            Thread.sleep(200);
+        } catch (InterrumpedException e){
+            e.printStackTrace();
+        }
     }
 
     /**
