@@ -24,6 +24,9 @@ public class ProcessThread extends Thread{
         this.y = y;
     }
 
+    /**
+     * Metodo run el cual mientras este en pausa, los threads esperaran, y cuando no, se empezaran a añadir los resultados
+     */
     public void run(){
         for (File file : resultFiles){
             synchronized (this) {
@@ -46,10 +49,16 @@ public class ProcessThread extends Thread{
         }
     }
 
+    /**
+     * Si se pausa el thread, cambiara la variable pause a true
+     */
     public void pauseThread(){
         pause = true;
     }
 
+    /**
+     * Se reanudaran todos los threads, cambiando la variable pause a false
+     */
     public void resmueThread(){
         pause = false;
         synchronized (this){

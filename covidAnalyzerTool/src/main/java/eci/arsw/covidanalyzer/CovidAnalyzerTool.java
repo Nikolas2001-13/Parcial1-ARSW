@@ -35,6 +35,9 @@ public class CovidAnalyzerTool implements Runnable{
         pause = false;
     }
 
+    /**
+     * Añade los threads segun el numero de threads que se le indico.
+     */
     public void processResultData() {
         amountOfFilesProcessed.set(0);
         List<File> resultFiles = getResultFileList();
@@ -73,12 +76,18 @@ public class CovidAnalyzerTool implements Runnable{
         return resultAnalyzer.listOfPositivePeople();
     }
 
+    /**
+     *Vuelve a correr los threads que se iniciaron
+     */
     public void resumeThread(){
         for (ProcessThread thread : threads){
             thread.resume();
         }
     }
 
+    /**
+     * Pausa los threads iniciados cambiando la variable pause a true
+     */
     public void pauseThread(){
         pause = true;
         for (ProcessThread thread : threads){
@@ -92,23 +101,44 @@ public class CovidAnalyzerTool implements Runnable{
     }
 
     /**
+     * Metodo el cual pausa o continua los threads si se oprime una tecla
+     */
+    public void run(){
+        Scanner scanner;
+        Thread thread = new Thread(() -> processResultData());
+        thread.start;
+
+        while (amountOfFilesTotal == -1 || amountOfFilesProcessed.get()<amountOfFilesTotal){
+            scanner = new Scanner(System.in);
+            String line = scanner.nextLine();
+            if (line.contains("exit")) {
+                break;
+            } else if (line.isEmpty()){
+                if (pause){
+                    resumeThread();
+                }else {
+                    pauseThread();
+                }
+            }else if (!pause && !line.isEmpty()){
+                showMessage();
+            }
+        }
+    }
+
+    public void showMessage(){
+        String message = "Processed %d out of %d files.\nFound %d positive people:\n%s";
+        Set<Result> positivePeople = covidAnalyzerTool.getPositivePeople();
+        String affectedPeople = positivePeople.stream().map(Result::toString).reduce("", (s1, s2) -> s1 + "\n" + s2);
+        message = String.format(message, covidAnalyzerTool.amountOfFilesProcessed.get(), covidAnalyzerTool.amountOfFilesTotal, positivePeople.size(), affectedPeople);
+        System.out.println(message);
+    }
+
+    /**
      * A main() so we can easily run these routing rules in our IDE
      */
     public static void main(String... args) throws Exception {
-        CovidAnalyzerTool covidAnalyzerTool = new CovidAnalyzerTool();
-        Thread processingThread = new Thread(() -> covidAnalyzerTool.processResultData());
-        processingThread.start();
-        while (true) {
-            Scanner scanner = new Scanner(System.in);
-            String line = scanner.nextLine();
-            if (line.contains("exit"))
-                break;
-            String message = "Processed %d out of %d files.\nFound %d positive people:\n%s";
-            Set<Result> positivePeople = covidAnalyzerTool.getPositivePeople();
-            String affectedPeople = positivePeople.stream().map(Result::toString).reduce("", (s1, s2) -> s1 + "\n" + s2);
-            message = String.format(message, covidAnalyzerTool.amountOfFilesProcessed.get(), covidAnalyzerTool.amountOfFilesTotal, positivePeople.size(), affectedPeople);
-            System.out.println(message);
-        }
+        Thread thread = new Thread(new CovidAnalyzerTool());
+        thread.start();
     }
 
 }
