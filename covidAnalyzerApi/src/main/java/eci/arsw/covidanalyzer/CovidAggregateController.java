@@ -16,7 +16,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 @RestController
 public class CovidAggregateController {
     @Autowired
-    @Qualifier("ICovidAggregateServiceStub")
+    @Qualifier("CovidAggregateService")
     ICovidAggregateService covidAggregateService;
 
     @RequestMapping(value = "/covid/result/true-positive", method = RequestMethod.POST)
